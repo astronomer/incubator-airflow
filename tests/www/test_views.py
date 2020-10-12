@@ -1169,7 +1169,7 @@ class TestRedocView(TestBase):
 
         assert len(templates) == 1
         assert templates[0].name == 'airflow/redoc.html'
-        assert templates[0].local_context == {'openapi_spec_url': '/api/v1/openapi.yaml'}
+        assert templates[0].local_context.get('openapi_spec_url') == '/api/v1/openapi.yaml'
 
 
 class TestLogView(TestBase):
