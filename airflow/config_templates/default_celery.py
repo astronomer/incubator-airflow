@@ -44,6 +44,13 @@ DEFAULT_CELERY_CONFIG = {
     'task_default_queue': conf.get('celery', 'DEFAULT_QUEUE'),
     'task_default_exchange': conf.get('celery', 'DEFAULT_QUEUE'),
     'task_track_started': conf.get('celery', 'task_track_started', fallback=True),
+    'task_publish_retry': conf.getboolean('celery_task_publish_retry_policy', 'retries_enabled'),
+    'task_publish_retry_policy': {
+        'max_retries': conf.getint('celery_task_publish_retry_policy', 'max_retries'),
+        'interval_start': conf.getfloat('celery_task_publish_retry_policy', 'interval_start'),
+        'interval_step': conf.getfloat('celery_task_publish_retry_policy', 'interval_step'),
+        'interval_max': conf.getfloat('celery_task_publish_retry_policy', 'interval_max'),
+    },
     'broker_url': broker_url,
     'broker_transport_options': broker_transport_options,
     'result_backend': conf.get('celery', 'RESULT_BACKEND'),

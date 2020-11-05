@@ -1408,7 +1408,8 @@
     - name: operation_timeout
       description: |
         The number of seconds to wait before timing out ``send_task_to_executor`` or
-        ``fetch_celery_task_state`` operations.
+        ``fetch_celery_task_state`` operations. You can further control number of retries
+        and time between each retry using options in ``[celery_task_publish_retry_policy]`` section.
       version_added: 1.10.8
       type: float
       example: ~
@@ -1449,6 +1450,61 @@
       type: string
       example: "21600"
       default: ~
+- name: celery_task_publish_retry_policy
+  description: |
+    This section is for specifying retry policy options for publishing task messages
+    in the case of connection loss or other connection errors.
+    See: https://docs.celeryproject.org/en/master/userguide/calling.html#calling-retry
+
+    The max timeout also depends on ``[celery] operation_timeout`` after which Airflow will
+    raise ``AirflowTaskTimeout`` error.
+
+  options:
+    - name: retries_enabled
+      description: |
+        Decides if publishing task messages will be retried in the case of connection loss or other
+        connection errors.
+        See:
+        https://docs.celeryproject.org/en/master/userguide/configuration.html#task-publish-retry
+      version_added: 2.0.0
+      type: boolean
+      example: ~
+      default: "True"
+    - name: max_retries
+      description: |
+        Maximum number of retries before giving up, in this case the exception that caused the retry
+        to fail will be raised.
+        See:
+        https://docs.celeryproject.org/en/master/userguide/configuration.html#task-publish-retry
+      version_added: 2.0.0
+      type: int
+      example: ~
+      default: "3"
+    - name: interval_start
+      description: |
+        Defines the number of seconds (float or integer) to wait between retries.
+        Default is 0 (the first retry will be instantaneous).
+      version_added: 2.0.0
+      type: float
+      example: ~
+      default: "0"
+      see_also: https://docs.celeryproject.org/en/master/userguide/calling.html#calling-retry
+    - name: interval_step
+      description: |
+        On each consecutive retry this number (in seconds) will be added to the retry delay.
+      version_added: 2.0.0
+      type: float
+      example: ~
+      default: "0.2"
+      see_also: https://docs.celeryproject.org/en/master/userguide/calling.html#calling-retry
+    - name: interval_max
+      description: |
+        Maximum number of seconds (float or integer) to wait between retries.
+      version_added: 2.0.0
+      type: float
+      example: ~
+      default: "0.2"
+      see_also: https://docs.celeryproject.org/en/master/userguide/calling.html#calling-retry
 - name: dask
   description: |
     This section only applies if you are using the DaskExecutor in
