@@ -74,4 +74,4 @@ class AzureDataExplorerQueryOperator(BaseOperator):
         """
         hook = self.get_hook()
         response = hook.run_query(self.query, self.database, self.options)
-        return response.primary_results[0].__str__()
+        return dict(response.primary_results[0])
