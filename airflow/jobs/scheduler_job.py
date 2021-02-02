@@ -1471,17 +1471,35 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         with prohibit_commit(session) as guard:
 
             if settings.USE_JOB_SCHEDULE:
-                query = DagModel.dags_needing_dagruns(session)
-                self._create_dag_runs(query.all(), session)
+                for attempt in tenacity.Retrying(
+                    retry=tenacity.retry_if_exception_type(exception_types=OperationalError),
+                    wait=tenacity.wait_random_exponential(multiplier=0.5, max=5),
+                    stop=tenacity.stop_after_attempt(settings.MAX_DB_RETRIES),
+                    before_sleep=tenacity.before_sleep_log(self.log, logging.DEBUG),
+                    reraise=True,
+                ):
+                    with attempt:
+                        try:
+                            self.log.debug(
+                                "Running SchedulerJob._do_scheduling with retries. Try %d of %d",
+                                attempt.retry_state.attempt_number,
+                                settings.MAX_DB_RETRIES,
+                            )
+                            self.log.debug("Calling SchedulerJob._do_scheduling method")
+                            query = DagModel.dags_needing_dagruns(session)
+                            self._create_dag_runs(query.all(), session)
 
-                # commit the session - Release the write lock on DagModel table.
-                guard.commit()
-                # END: create dagruns
+                            # commit the session - Release the write lock on DagModel table.
+                            guard.commit()
+                            # END: create dagruns
 
-            dag_runs = DagRun.next_dagruns_to_examine(session)
+                            dag_runs = DagRun.next_dagruns_to_examine(session)
 
-            # Bulk fetch the currently active dag runs for the dags we are
-            # examining, rather than making one query per DagRun
+                            # Bulk fetch the currently active dag runs for the dags we are
+                            # examining, rather than making one query per DagRun
+                        except OperationalError:
+                            session.rollback()
+                            raise
 
             # TODO: This query is probably horribly inefficient (though there is an
             # index on (dag_id,state)). It is to deal with the case when a user
